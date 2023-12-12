@@ -2,7 +2,7 @@
 result_dir=results
 sleeptime=5
 
-rm -rf "./$result_dir"
+#rm -rf "./$result_dir"
 mkdir -p "./$result_dir"
 erl -make
 
@@ -25,16 +25,44 @@ concurrent_clients() {
   entries=10
   reads=1
   writes=1
-  echo "clients, mean, stdev" >> $result_dir/all.csv
+  experiment_dir="./$result_dir/clients"
+  rm -rf "$experiment_dir"
+  mkdir -p "$experiment_dir"
+
+  echo "clients, mean, stdev" >> $experiment_dir/all.csv
   for clients in "${nr_clients[@]}"; do
     echo "$clients, $entries, $reads, $writes";
     filename="$clients.out";
-    erl -noshell -pa ebin -eval "opty:start($clients, $entries, $reads, $writes, $maxtime)" > $result_dir/$filename & pid=$!; sleep $sleeptime; kill $pid
-    results=$(cat $result_dir/$filename | grep TOTAL | cut -d '>' -f2 | cut -d '%' -f1 | tr -d " ")
+    erl -noshell -pa ebin -eval "opty:start($clients, $entries, $reads, $writes, $maxtime)" > $experiment_dir/$filename & pid=$!; sleep $sleeptime; kill $pid
+    results=$(cat $experiment_dir/$filename | grep TOTAL | cut -d '>' -f2 | cut -d '%' -f1 | tr -d " ")
     mean=$(calc_mean "$results")
     stdev=$(calc_stdev "$results")
-    echo $clients, $mean, $stdev >> $result_dir/all.csv
+    echo $clients, $mean, $stdev >> $experiment_dir/all.csv
+  done
+}
+
+
+diff_entries() {
+  maxtime=4
+  nr_clients=2
+  nr_entries=(1 10 20 30 40 50 60 70 80 90 100)
+  reads=1
+  writes=1
+  experiment_dir="./$result_dir/entries"
+  rm -rf "$experiment_dir"
+  mkdir -p "$experiment_dir"
+
+  echo "clients, entries, mean, stdev" >> $experiment_dir/all.csv
+  for entries in "${nr_entries[@]}"; do
+    echo "$nr_clients, $entries, $reads, $writes";
+    filename="$entries.out";
+    erl -noshell -pa ebin -eval "opty:start($nr_clients, $entries, $reads, $writes, $maxtime)" > $experiment_dir/$filename & pid=$!; sleep $sleeptime; kill $pid
+    results=$(cat $experiment_dir/$filename | grep TOTAL | cut -d '>' -f2 | cut -d '%' -f1 | tr -d " ")
+    mean=$(calc_mean "$results")
+    stdev=$(calc_stdev "$results")
+    echo $nr_clients, $entries, $mean, $stdev >> $experiment_dir/all.csv
   done
 }
 
 concurrent_clients
+diff_entries
