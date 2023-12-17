@@ -1,5 +1,5 @@
 -module(opty).
--export([start/7, stop/2]).
+-export([start/7, stop/1]).
 
 %% Clients: Number of concurrent clients in the system
 %% Entries: Number of entries in the store
@@ -9,17 +9,18 @@
 
 start(Clients, Entries, Reads, Writes, Time, SrvNode, CltNode) ->
     Server = server:start(Entries, SrvNode),
+    register(s, Server),
     L = startClients(Clients, [], Entries, Reads, Writes, Server, CltNode),
     io:format("Starting: ~w CLIENTS, ~w ENTRIES, ~w RDxTR, ~w WRxTR, DURATION ~w s~n",
          [Clients, Entries, Reads, Writes, Time]),
     timer:sleep(Time*1000),
-    stop(L, Server).
+    stop(L).
 
-stop(L, Server) ->
+stop(L) ->
     io:format("Stopping...~n"),
     stopClients(L),
     waitClients(L),
-    Server ! stop,
+    s ! stop,
     io:format("Stopped~n").
 
 startClients(0, L, _, _, _, _, _) -> L;
