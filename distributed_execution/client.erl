@@ -1,8 +1,8 @@
 -module(client).
--export([start/5]).
+-export([start/6]).
 
-start(ClientID, Entries, Reads, Writes, Server) ->
-    spawn(fun() -> open(ClientID, Entries, Reads, Writes, Server, 0, 0) end).
+start(ClientID, Entries, Reads, Writes, Server, CltNode) ->
+    spawn(CltNode, fun() -> open(ClientID, Entries, Reads, Writes, Server, 0, 0) end).
 
 open(ClientID, Entries, Reads, Writes, Server, Total, Ok) ->
     Server ! {open, self()},
@@ -35,7 +35,7 @@ do_transaction(ClientID, Entries, Reads, Writes, Handler) ->
     if Op >= 0.5 ->
          do_read(Entries, Handler),
          do_transaction(ClientID, Entries, Reads-1, Writes, Handler);
-       true -> 
+       true ->
          do_write(Entries, Handler, ClientID),
          do_transaction(ClientID, Entries, Reads, Writes-1, Handler)
     end.
@@ -58,6 +58,3 @@ do_commit(Handler) ->
     receive
         {Ref, Value} -> Value
     end.
-
-
-    

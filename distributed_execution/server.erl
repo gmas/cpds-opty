@@ -1,8 +1,8 @@
 -module(server).
--export([start/1]).
+-export([start/2]).
 
-start(N) ->
-    spawn(fun() -> init(N) end).
+start(N, SrvNode) ->
+    spawn(SrvNode, fun() -> init(N) end).
 
 init(N) ->
     Store = store:new(N),
