@@ -22,10 +22,10 @@ handler(Client, Validator, Store, Reads, Writes) ->
                     Entry ! {read, Ref, self()},
                     handler(Client, Validator, Store, Reads, Writes)
             end;
-        {Ref, Entry, Value, Time} ->
+        {readack, Ref, Entry, Value} ->
             %% TODO: ADD SOME CODE HERE AND COMPLETE NEXT LINE
             Client ! {value, Ref, Value},
-            handler(Client, Validator, Store, [{Entry, Time}|Reads], Writes);
+            handler(Client, Validator, Store, [Entry|Reads], Writes);
         {write, N, Value} ->
             %% TODO: ADD SOME CODE HERE AND COMPLETE NEXT LINE
             Entry = store:lookup(N, Store),
@@ -33,7 +33,9 @@ handler(Client, Validator, Store, Reads, Writes) ->
             handler(Client, Validator, Store, Reads, Added);
         {commit, Ref} ->
             %% TODO: ADD SOME CODE
-            Validator ! {validate, Ref, Reads, Writes, Client};
+            Validator ! {validate, Ref, Reads, Writes, Client, self()};
         abort ->
+            %% From Whom will send this message?
+            lists:foreach(fun(Entry) -> Entry ! {unread, self()} end, Reads),
             ok
     end.

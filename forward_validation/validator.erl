@@ -9,17 +9,22 @@ init()->
 
 validator() ->
     receive
-        {validate, Ref, Reads, Writes, Client} ->
+        {validate, Ref, Reads, Writes, Client, From} ->
             Tag = make_ref(),
-            send_read_checks(Reads, Tag),  %% TODO: COMPLETE
-            case check_reads(length(Reads), Tag) of  %% TODO: COMPLETE
+            lists:foreach(fun({_, Entry, _}) -> Entry ! lock end, Writes),
+            lists:foreach(fun({_, Entry, _}) -> Entry ! {unread, From} end, Writes),
+            send_write_check(Writes, From, Tag),  %% TODO: COMPLETE
+            case check_writes(length(Writes), Tag) of  %% TODO: COMPLETE
                 ok ->
                     update(Writes),  %% TODO: COMPLETE
+                    lists:foreach(fun(Entry) -> Entry ! {unread, From} end, Reads),
                     Client ! {Ref, ok};
                 abort ->
+                    lists:foreach(fun(Entry) -> Entry ! {unread, From} end, Reads),
                     %% TODO: ADD SOME CODE
                     Client ! {Ref, abort}
             end,
+            lists:foreach(fun({_, Entry, _}) -> Entry ! unlock end, Writes),
             validator();
         stop ->
             ok;
@@ -34,20 +39,20 @@ update(Writes) ->
                   end,
                   Writes).
 
-send_read_checks(Reads, Tag) ->
+send_write_check(Writes, From, Tag) ->
     Self = self(),
-    lists:foreach(fun({Entry, Time}) ->
+    lists:foreach(fun({_, Entry, _}) ->
                   %% TODO: ADD SOME CODE
-                  Entry ! {check, Tag, Time, Self}
+                  Entry ! {check, Tag, From, Self}
                   end,
-                  Reads).
+                  Writes).
 
-check_reads(0, _) ->
+check_writes(0, _) ->
     ok;
-check_reads(N, Tag) ->
+check_writes(N, Tag) ->
     receive
         {Tag, ok} ->
-            check_reads(N-1, Tag);
+            check_writes(N-1, Tag);
         {Tag, abort} ->
             abort
     end.
