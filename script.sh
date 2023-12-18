@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+# set -ex
 result_dir=results
 sleeptime=5
 
@@ -155,35 +155,24 @@ diff_subsets() {
   rm -rf "$experiment_dir"
   mkdir -p "$experiment_dir"
 
-  echo "clients, entries, reads, writes, mean, stdev" >> $experiment_dir/all.csv
-  echo "clients, entries, reads, writes"
-  # for ratio in "${ratio_reads[@]}"; do
-  #   reads=$(echo "$ratio * $total_ops /1" |bc)
-  #   writes=$(echo "($total_ops - $reads) /1" |bc)
-  #   args="$nr_clients, $nr_entries, $reads, $writes";
-  #   echo "$args"
-  #   filename="$ratio.out";
-  #   erl -noshell -pa ebin -eval "opty:start($args, $maxtime)" > $experiment_dir/$filename & pid=$!; sleep $sleeptime; kill $pid
-  #   results=$(cat $experiment_dir/$filename | grep TOTAL | cut -d '>' -f2 | cut -d '%' -f1 | tr -d " ")
-  #   mean=$(calc_mean "$results")
-  #   stdev=$(calc_stdev "$results")
-  #   echo $nr_clients, $nr_entries, $reads, $writes, $mean, $stdev >> $experiment_dir/all.csv
-  # done
-for percentage in "${subset_perc[@]}"; do
-    echo $percentage;
+  echo "clients, entries, reads_perc, reads, writes, mean, stdev" >> $experiment_dir/all.csv
+  for percentage in "${subset_perc[@]}"; do
     filename="$percentage.out";
-    export subset_perc=$percentage; erl -noshell -pa ebin -eval "opty:start($nr_clients, $nr_entries, $nr_reads, $nr_writes, $maxtime)" > $experiment_dir/$filename & pid=$!; sleep $sleeptime; kill $pid
-    # geomean=$(grep "Mean" subset2/$filename | awk -F '[:]' '{print $2}')
-    # stddev=$(grep "Stddev" subset2/$filename | awk -F '[:]' '{print $2}')
-    # echo $percentage, $geomean, $stddev >> subset2/clean
-done
+    args="$nr_clients, $nr_entries, $nr_reads, $nr_writes"
+    echo "$percentage, $args"
+    subset_perc=$percentage erl -noshell -pa ebin -eval "opty:start($args, $maxtime)" > $experiment_dir/$filename & pid=$!; sleep $sleeptime; kill $pid
+    results=$(cat $experiment_dir/$filename | grep TOTAL | cut -d '>' -f2 | cut -d '%' -f1 | tr -d " ")
+    mean=$(calc_mean "$results")
+    stdev=$(calc_stdev "$results")
+    echo $nr_clients, $nr_entries, $percentage, $nr_reads, $nr_writes, $mean, $stdev >> $experiment_dir/all.csv
+  done
   cat $experiment_dir/all.csv
 
 }
 
-# concurrent_clients
-# diff_entries
-# diff_reads
-# diff_writes
-# diff_ratios
+concurrent_clients
+diff_entries
+diff_reads
+diff_writes
+diff_ratios
 diff_subsets
