@@ -19,12 +19,13 @@ entry(Value, ReadsList, Locked) ->
             entry(Value, L, Locked);
         {write, New} when Locked ->
             entry(New, [], Locked);
-        {check, Ref, _, Validator} ->
-            case length(ReadsList) of
-		        0->
-				    Validator ! {Ref, ok};
-		        _ ->
-		            Validator ! {Ref, abort}
+        {check, Ref, _, From} ->
+            if
+                length(ReadsList) == 0 ->
+                    %% TODO: ADD SOME CODE
+				    From ! {Ref, ok};
+		        true ->
+		            From ! {Ref, abort}
 	        end,
             entry(Value, ReadsList, Locked);
 	    {unread, From} ->
