@@ -19,15 +19,19 @@ handler(Client, Validator, Store, Reads, Writes) ->
                     Entry ! {read, Ref, self()},
                     handler(Client, Validator, Store, Reads, Writes)
             end;
-        {Ref, Entry, Value, Time} ->
+        {readack, Ref, Entry, Value} ->
+            %% TODO: ADD SOME CODE HERE AND COMPLETE NEXT LINE
             Client ! {value, Ref, Value},
-            handler(Client, Validator, Store, [{Entry, Time}|Reads], Writes);
+            handler(Client, Validator, Store, [Entry|Reads], Writes);
         {write, N, Value} ->
             Entry = store:lookup(N, Store),
             Added = lists:keystore(N, 1, Writes, {N, Entry, Value}),
             handler(Client, Validator, Store, Reads, Added);
         {commit, Ref} ->
-            Validator ! {validate, Ref, Reads, Writes, Client};
+            %% TODO: ADD SOME CODE
+            Validator ! {validate, Ref, Reads, Writes, Client, self()};
         abort ->
+            %% From Whom will send this message?
+            lists:foreach(fun(Entry) -> Entry ! {unread, self()} end, Reads),
             ok
     end.
