@@ -34,8 +34,5 @@ entry(Value, ReadsList, Locked) ->
             ok
     end.
 
-unread(_, []) -> [];
-unread(H, [H|T]) ->
-    unread(H, T);
-unread(X, [H|T]) ->
-    [H | unread(X, T)].
+unread(From, ReadsList) ->
+    lists:filter(fun(X) -> X /= From end, ReadsList).
