@@ -7,18 +7,18 @@ new(Value) ->
 init(Value) ->
     entry(Value, [], true).
 
-entry(Value, ReadsList, Locked) ->
+entry(Value, ReadsList, Unlocked) ->
     receive
-	    lock when Locked ->
+	    lock when Unlocked ->
 	        entry(Value, ReadsList, false);
-	    unlock when not Locked->
+	    unlock when not Unlocked->
 	        entry(Value, ReadsList, true);
-        {read, Ref, From} when Locked ->
+        {read, Ref, From} when Unlocked ->
             L = lists:append(ReadsList, [From]),
             From ! {readack, Ref, self(), Value},
-            entry(Value, L, Locked);
-        {write, New} when Locked ->
-            entry(New, [], Locked);
+            entry(Value, L, Unlocked);
+        {write, New} when Unlocked ->
+            entry(New, [], Unlocked);
         {check, Ref, _, From} ->
             if
                 length(ReadsList) == 0 ->
@@ -27,13 +27,13 @@ entry(Value, ReadsList, Locked) ->
 		        true ->
 		            From ! {Ref, abort}
 	        end,
-            entry(Value, ReadsList, Locked);
+            entry(Value, ReadsList, Unlocked);
 	    {unread, From} ->
 	        L = unread(From, ReadsList),
-	        entry(Value, L, Locked);
+	        entry(Value, L, Unlocked);
         stop ->
             ok
     end.
 
 unread(From, ReadsList) ->
-    lists:filter(fun(X) -> X /= From end, ReadsList).
+    lists:filter(fun(Element) -> Element /= From end, ReadsList).

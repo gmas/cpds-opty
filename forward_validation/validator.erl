@@ -12,15 +12,13 @@ validator() ->
         {validate, Ref, Reads, Writes, Client, From} ->
             Tag = make_ref(),
             lists:foreach(fun({_, Entry, _}) -> Entry ! lock end, Writes),
-            lists:foreach(fun({_, Entry, _}) -> Entry ! {unread, From} end, Writes),
+            lists:foreach(fun(Entry) -> Entry ! {unread, From} end, Reads),
             send_write_check(Writes, From, Tag),  %% TODO: COMPLETE
             case check_writes(length(Writes), Tag) of  %% TODO: COMPLETE
                 ok ->
                     update(Writes),  %% TODO: COMPLETE
-                    lists:foreach(fun(Entry) -> Entry ! {unread, From} end, Reads),
                     Client ! {Ref, ok};
                 abort ->
-                    lists:foreach(fun(Entry) -> Entry ! {unread, From} end, Reads),
                     %% TODO: ADD SOME CODE
                     Client ! {Ref, abort}
             end,
