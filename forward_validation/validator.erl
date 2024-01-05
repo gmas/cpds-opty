@@ -19,6 +19,7 @@ validator() ->
                     update(Writes),  %% TODO: COMPLETE
                     Client ! {Ref, ok};
                 abort ->
+                    lists:foreach(fun(Entry) -> Entry ! {unread, From} end, Reads),
                     %% TODO: ADD SOME CODE
                     Client ! {Ref, abort}
             end,
@@ -32,7 +33,6 @@ validator() ->
 
 update(Writes) ->
     lists:foreach(fun({_, Entry, Value}) ->
-                  %% TODO: ADD SOME CODE
                   Entry ! {write, Value}
                   end,
                   Writes).
@@ -40,7 +40,6 @@ update(Writes) ->
 send_write_check(Writes, From, Tag) ->
     Self = self(),
     lists:foreach(fun({_, Entry, _}) ->
-                  %% TODO: ADD SOME CODE
                   Entry ! {check, Tag, From, Self}
                   end,
                   Writes).

@@ -22,7 +22,6 @@ entry(Value, ReadsList, Unlocked) ->
         {check, Ref, _, From} ->
             if
                 length(ReadsList) == 0 ->
-                    %% TODO: ADD SOME CODE
 				    From ! {Ref, ok};
 		        true ->
 		            From ! {Ref, abort}
@@ -36,4 +35,4 @@ entry(Value, ReadsList, Unlocked) ->
     end.
 
 unread(From, ReadsList) ->
-    lists:filter(fun(Element) -> Element /= From end, ReadsList).
+    lists:filter(fun(X) -> X /= From end, ReadsList).

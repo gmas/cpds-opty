@@ -10,15 +10,13 @@ init(Value) ->
 entry(Value, Time) ->
     receive
         {read, Ref, From} ->
-            %% TODO: ADD SOME CODE
             From ! {Ref, self(), Value, Time},
             entry(Value, Time);
         {write, New} ->
-            entry(New, make_ref());  %% TODO: COMPLETE
+            entry(New, make_ref());
         {check, Ref, Readtime, From} ->
             if
-                 Time == Readtime ->   %% TODO: COMPLETE
-                    %% TODO: ADD SOME CODE
+                 Time == Readtime ->
                     From ! {Ref, ok};
                 true ->
                     From ! {Ref, abort}
